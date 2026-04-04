@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "eval_calibration_evidence",
+  "type": "object",
+  "required": ["proposal_id", "node_revision", "record_count", "evidence"],
+  "additionalProperties": false,
+  "properties": {
+    "proposal_id": { "type": "string" },
+    "node_revision": { "type": "string" },
+    "record_count": { "type": "integer", "minimum": 0 },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "param_name", "n_false_block", "n_missed_block", "n_false_caution",
+          "n_missed_caution", "n_total_implicated", "n_total", "recurrence_count",
+          "false_block_rate", "missed_block_rate", "net_direction"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "param_name": { "type": "string" },
+          "n_false_block": { "type": "integer", "minimum": 0 },
+          "n_missed_block": { "type": "integer", "minimum": 0 },
+          "n_false_caution": { "type": "integer", "minimum": 0 },
+          "n_missed_caution": { "type": "integer", "minimum": 0 },
+          "n_total_implicated": { "type": "integer", "minimum": 0 },
+          "n_total": { "type": "integer", "minimum": 0 },
+          "recurrence_count": { "type": "integer", "minimum": 0 },
+          "false_block_rate": { "type": "number" },
+          "missed_block_rate": { "type": "number" },
+          "net_direction": { "type": "number" }
+        }
+      }
+    }
+  }
+}

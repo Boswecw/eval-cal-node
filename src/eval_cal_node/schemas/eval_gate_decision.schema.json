@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "eval_gate_decision",
+  "type": "object",
+  "required": ["proposal_id", "node_revision", "evaluated_at_record_count", "parameters_evaluated"],
+  "additionalProperties": false,
+  "properties": {
+    "proposal_id": { "type": "string" },
+    "node_revision": { "type": "string" },
+    "evaluated_at_record_count": { "type": "integer", "minimum": 0 },
+    "parameters_evaluated": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "param_name", "candidate_status",
+          "gate1_outcome", "gate1_reason",
+          "gate2_outcome", "gate2_reason",
+          "final_routing"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "param_name": { "type": "string" },
+          "candidate_status": { "type": "string" },
+          "gate1_outcome": { "type": "string", "enum": ["reject", "hold", "advance"] },
+          "gate1_reason": { "type": "string" },
+          "gate2_outcome": { "type": "string", "enum": ["reject", "hold", "advance", "not_reached"] },
+          "gate2_reason": { "type": "string" },
+          "final_routing": { "type": "string", "enum": ["rejected", "held", "gate3_ready"] }
+        }
+      }
+    }
+  }
+}

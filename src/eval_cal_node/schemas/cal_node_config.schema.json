@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cal_node_config",
+  "description": "Eval Cal Node configuration with per-parameter policy bounds.",
+  "type": "object",
+  "required": [
+    "node_revision",
+    "min_sample_size",
+    "min_recurrence",
+    "effect_floor",
+    "sensitivity_factor",
+    "hold_after_decline_cycles",
+    "min_new_recurrence",
+    "rounding_digits",
+    "parameters"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "node_revision": { "type": "string", "minLength": 1 },
+    "min_sample_size": { "type": "integer", "minimum": 1 },
+    "min_recurrence": { "type": "integer", "minimum": 1 },
+    "effect_floor": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+    "sensitivity_factor": { "type": "number", "exclusiveMinimum": 0 },
+    "hold_after_decline_cycles": { "type": "integer", "minimum": 1 },
+    "min_new_recurrence": { "type": "integer", "minimum": 1 },
+    "rounding_digits": { "type": "integer", "minimum": 0, "maximum": 12 },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["current_value", "param_min", "param_max", "max_movement", "allowed"],
+        "additionalProperties": false,
+        "properties": {
+          "current_value": { "type": "number" },
+          "param_min": { "type": "number" },
+          "param_max": { "type": "number" },
+          "max_movement": { "type": "number", "exclusiveMinimum": 0 },
+          "allowed": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

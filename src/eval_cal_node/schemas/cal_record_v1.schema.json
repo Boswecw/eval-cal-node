@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cal_record_v1",
+  "description": "Historical calibration record for one implementation slice.",
+  "type": "object",
+  "required": [
+    "record_id",
+    "slice_ref",
+    "eval_parameter_revision",
+    "eval_signals",
+    "system_md_signals",
+    "reconciliation_outcome",
+    "record_version",
+    "recorded_at_revision"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "description": "SHA-256 of slice_ref fields: repo + base_commit + head_commit + run_id"
+    },
+    "slice_ref": {
+      "type": "object",
+      "required": ["repo", "base_commit", "head_commit", "run_id"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": { "type": "string", "minLength": 1 },
+        "base_commit": { "type": "string", "minLength": 1 },
+        "head_commit": { "type": "string", "minLength": 1 },
+        "run_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "eval_parameter_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "eval_signals": {
+      "type": "object",
+      "required": [
+        "hazard_score",
+        "hazard_tier",
+        "merge_decision",
+        "reason_codes",
+        "selected_hidden",
+        "selected_method",
+        "chao2_available",
+        "mean_psi_post",
+        "max_psi_post",
+        "null_coverage_ratio",
+        "k_eff",
+        "defect_count",
+        "reviewer_count"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "hazard_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hazard_tier": {
+          "type": "string",
+          "enum": ["low", "guarded", "elevated", "high", "critical"]
+        },
+        "merge_decision": {
+          "type": "string",
+          "enum": ["allow", "caution", "block"]
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selected_hidden": { "type": "number", "minimum": 0 },
+        "selected_method": {
+          "type": "string",
+          "enum": ["chao1", "chao2", "ice"]
+        },
+        "chao2_available": { "type": "boolean" },
+        "mean_psi_post": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_psi_post": { "type": "number", "minimum": 0, "maximum": 1 },
+        "null_coverage_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "k_eff": { "type": "integer", "minimum": 0 },
+        "defect_count": { "type": "integer", "minimum": 0 },
+        "reviewer_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "system_md_signals": {
+      "type": "object",
+      "required": ["declared_subsystems_updated", "declared_boundary_after"],
+      "additionalProperties": false,
+      "properties": {
+        "declared_subsystems_updated": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "declared_boundary_after": { "type": "string" }
+      }
+    },
+    "reconciliation_outcome": {
+      "type": "object",
+      "required": [
+        "drift_found",
+        "drift_types",
+        "severity",
+        "implicated_parameters",
+        "disposition",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "drift_found": { "type": "boolean" },
+        "drift_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "false_block",
+              "missed_block",
+              "false_caution",
+              "missed_caution",
+              "overestimated_hidden",
+              "underestimated_hidden",
+              "occupancy_overcautious",
+              "occupancy_undercautious",
+              "risk_miscalibrated"
+            ]
+          }
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["none", "minor", "moderate", "significant"]
+        },
+        "implicated_parameters": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "disposition": {
+          "type": "string",
+          "enum": ["confirmed_drift", "false_alarm", "accepted", "deferred"]
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "record_version": {
+      "type": "string",
+      "const": "cal_record_v1"
+    },
+    "recorded_at_revision": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

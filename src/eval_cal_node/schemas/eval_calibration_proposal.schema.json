@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "eval_calibration_proposal",
+  "type": "object",
+  "required": ["proposal_id", "node_revision", "record_count", "proposals"],
+  "additionalProperties": false,
+  "properties": {
+    "proposal_id": { "type": "string" },
+    "node_revision": { "type": "string" },
+    "record_count": { "type": "integer", "minimum": 0 },
+    "proposals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["param_name", "current_value", "proposed_value", "bounded_delta", "status", "direction"],
+        "additionalProperties": false,
+        "properties": {
+          "param_name": { "type": "string" },
+          "current_value": { "type": "number" },
+          "proposed_value": { "type": "number" },
+          "bounded_delta": { "type": "number" },
+          "status": { "type": "string", "enum": ["candidate", "hold", "rejected"] },
+          "direction": { "type": "string", "enum": ["increase", "decrease", "none"] }
+        }
+      }
+    }
+  }
+}

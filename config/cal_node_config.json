@@ -1,0 +1,103 @@
+{
+  "node_revision": "cal_node_rev1",
+  "min_sample_size": 5,
+  "min_recurrence": 3,
+  "effect_floor": 0.15,
+  "sensitivity_factor": 0.5,
+  "hold_after_decline_cycles": 3,
+  "min_new_recurrence": 2,
+  "rounding_digits": 6,
+  "parameters": {
+    "hazard_hidden_uplift_strength": {
+      "current_value": 0.20,
+      "param_min": 0.05,
+      "param_max": 0.50,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "hazard_structural_risk_strength": {
+      "current_value": 0.30,
+      "param_min": 0.10,
+      "param_max": 0.60,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "hazard_occupancy_strength": {
+      "current_value": 0.35,
+      "param_min": 0.10,
+      "param_max": 0.70,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "hazard_support_uplift_strength": {
+      "current_value": 0.15,
+      "param_min": 0.05,
+      "param_max": 0.40,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "hazard_uncertainty_boost": {
+      "current_value": 0.12,
+      "param_min": 0.05,
+      "param_max": 0.40,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "hazard_blocking_threshold": {
+      "current_value": 0.80,
+      "param_min": 0.50,
+      "param_max": 0.95,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "merge_decision_caution_threshold": {
+      "current_value": 0.20,
+      "param_min": 0.10,
+      "param_max": 0.50,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "merge_decision_block_threshold": {
+      "current_value": 0.60,
+      "param_min": 0.30,
+      "param_max": 0.90,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "occupancy_prior_base": {
+      "current_value": 0.45,
+      "param_min": 0.10,
+      "param_max": 0.80,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "occupancy_support_uplift": {
+      "current_value": 0.20,
+      "param_min": 0.0,
+      "param_max": 0.50,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "occupancy_detection_assumption": {
+      "current_value": 0.70,
+      "param_min": 0.30,
+      "param_max": 0.95,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "occupancy_miss_penalty_strength": {
+      "current_value": 0.35,
+      "param_min": 0.10,
+      "param_max": 0.70,
+      "max_movement": 0.05,
+      "allowed": true
+    },
+    "occupancy_null_uncertainty_boost": {
+      "current_value": 0.30,
+      "param_min": 0.10,
+      "param_max": 0.70,
+      "max_movement": 0.05,
+      "allowed": true
+    }
+  }
+}
