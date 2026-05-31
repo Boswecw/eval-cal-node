@@ -2,5 +2,7 @@ __pycache__/
 *.pyc
 *.egg-info/
 .venv/
+build/
+dist/
 records/
 proposals/
