@@ -17,9 +17,10 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import httpx
+if TYPE_CHECKING:
+    import httpx
 
 
 def _ensure_sdk_on_path() -> None:
@@ -34,12 +35,12 @@ def _ensure_sdk_on_path() -> None:
             return
 
 
-_ensure_sdk_on_path()
-
-from forge_lineage_sdk.enforcement import (  # noqa: E402
-    EdgeRequirement,
-    enforce_edge_for_promotion,
-)
+def _load_enforcement():
+    """Import the ForgeLineage enforcement helpers lazily so this module is
+    importable without the (monorepo-only) SDK present."""
+    _ensure_sdk_on_path()
+    from forge_lineage_sdk.enforcement import EdgeRequirement, enforce_edge_for_promotion
+    return EdgeRequirement, enforce_edge_for_promotion
 
 
 @dataclass
@@ -57,7 +58,7 @@ def check_gate3_lineage(
     eval_cal_record_node_id: str,
     expected_source_payload_hash: str | None = None,
     base_url: str = "http://127.0.0.1:8005",
-    http_client: httpx.Client | None = None,
+    http_client: "httpx.Client | None" = None,
 ) -> LineageGate3Decision:
     """Look up the source/target nodes and the ``consumed`` edge, then apply
     the SDK enforcement rule. Returns ``allowed=False`` if anything is wrong.
@@ -66,6 +67,20 @@ def check_gate3_lineage(
     ``allowed=False, availability="lineage_missing"`` — Gate 3 must NOT
     approve when lineage cannot be verified.
     """
+    try:
+        import httpx
+
+        EdgeRequirement, enforce_edge_for_promotion = _load_enforcement()
+    except ImportError as exc:
+        # Fail closed: if the enforcement SDK / transport is unavailable we
+        # cannot verify lineage, so Gate 3 must not approve.
+        return LineageGate3Decision(
+            allowed=False,
+            availability="lineage_missing",
+            reason_class="enforcement_unavailable",
+            reason_message=f"lineage dependencies not importable: {exc!r}",
+        )
+
     client = http_client
     owns_client = False
     if client is None:

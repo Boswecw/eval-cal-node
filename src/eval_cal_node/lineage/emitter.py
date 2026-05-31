@@ -23,10 +23,19 @@ def _ensure_sdk_on_path() -> None:
             return
 
 
-_ensure_sdk_on_path()
+def _load_sdk():
+    """Import the ForgeLineage SDK lazily.
 
-from forge_lineage_sdk import LineageClient, LocalOutcome  # noqa: E402
-from forge_lineage_sdk.builders import build_edge, build_envelope, build_node  # noqa: E402
+    The SDK is a Forge-monorepo dependency that is not available when
+    eval-cal-node is installed/checked out standalone. Importing it lazily
+    keeps this module importable everywhere; the emit_* methods wrap calls in
+    try/except so a missing SDK degrades to ``lineage_missing`` rather than
+    breaking ingestion.
+    """
+    _ensure_sdk_on_path()
+    from forge_lineage_sdk import LineageClient, LocalOutcome
+    from forge_lineage_sdk.builders import build_edge, build_envelope, build_node
+    return LineageClient, LocalOutcome, build_edge, build_envelope, build_node
 
 
 @dataclass
@@ -55,6 +64,7 @@ class EvalCalLineageEmitter:
         base_url: str = "http://127.0.0.1:8005",
         writer_token: str = "local-eval-cal-node",
     ) -> "EvalCalLineageEmitter":
+        LineageClient = _load_sdk()[0]
         client = LineageClient(
             base_url=base_url,
             writer_identity=cls.WRITER_IDENTITY,
@@ -133,6 +143,7 @@ class EvalCalLineageEmitter:
         trace_id: str | None,
         ingested_at: str | None,
     ) -> LineageEmissionStatus:
+        _, LocalOutcome, build_edge, build_envelope, build_node = _load_sdk()
         trace = trace_id or f"trace:eval-cal-node:{record_id}"
         record_payload: dict[str, Any] = {
             "schema_version": "eval_cal_record.v1",
@@ -205,6 +216,7 @@ class EvalCalLineageEmitter:
         block_reason_class: str | None,
         trace_id: str | None,
     ) -> LineageEmissionStatus:
+        _, LocalOutcome, build_edge, build_envelope, build_node = _load_sdk()
         trace = trace_id or f"trace:eval-cal-node:{proposal_id}"
 
         proposal_node = build_node(

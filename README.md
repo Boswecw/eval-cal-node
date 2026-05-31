@@ -40,6 +40,9 @@ pip install -e .
 # Ingest a calibration record
 eval-cal-node record --input <record.json> [--backfill]
 
+# Run Gate 1 + Gate 2 over ingested records and emit a proposal
+eval-cal-node propose
+
 # Check node status
 eval-cal-node status
 

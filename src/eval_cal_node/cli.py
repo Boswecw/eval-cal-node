@@ -37,11 +37,86 @@ def cmd_record(args: argparse.Namespace) -> int:
             records_dir,
             backfill=args.backfill,
         )
-    except CalNodeError as e:
+    except (CalNodeError, FileNotFoundError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
 
     print(f"RECORDED {record_id}")
+    return 0
+
+
+def cmd_propose(args: argparse.Namespace) -> int:
+    """Handle the 'propose' subcommand.
+
+    Runs Gate 1 and Gate 2 over the ingested records and emits the proposal,
+    evidence, param-delta, gate-decision, and (for any Gate 3-ready parameter)
+    approval-request artifacts. Gate 3 itself remains a human review step
+    (see the 'review' subcommand).
+    """
+    from eval_cal_node.config import load_config, get_allowed_parameters
+    from eval_cal_node.services.pattern_extractor import extract_patterns, load_all_records
+    from eval_cal_node.services.calibration_math import compute_all_candidates
+    from eval_cal_node.services.gate_runner import run_gates
+    from eval_cal_node.services.artifact_writers import (
+        write_approval_request,
+        write_evidence,
+        write_param_delta,
+        write_proposal,
+    )
+
+    records_dir = Path(args.records_dir) if args.records_dir else DEFAULT_RECORDS_DIR
+    proposals_dir = Path(args.proposals_dir) if args.proposals_dir else DEFAULT_PROPOSALS_DIR
+    config_path = Path(args.config) if args.config else None
+
+    try:
+        config = load_config(config_path)
+    except (CalNodeError, FileNotFoundError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
+
+    records = load_all_records(records_dir)
+    n_total = len(records)
+    min_sample_size = config["min_sample_size"]
+    if n_total < min_sample_size:
+        print(f"Not enough records to propose: {n_total}/{min_sample_size}. No proposal emitted.")
+        return 0
+
+    allowed = get_allowed_parameters(config)
+    patterns = extract_patterns(records, allowed)
+    candidates = compute_all_candidates(patterns, allowed, config)
+
+    gate_decision = run_gates(candidates, patterns, allowed, config, proposals_dir)
+    proposal_id = gate_decision["proposal_id"]
+    node_revision = config["node_revision"]
+
+    write_proposal(proposal_id, node_revision, n_total, candidates, proposals_dir)
+    write_evidence(proposal_id, node_revision, n_total, patterns, candidates, proposals_dir)
+    write_param_delta(proposal_id, node_revision, candidates, allowed, proposals_dir)
+
+    gate3_params = [
+        e["param_name"]
+        for e in gate_decision["parameters_evaluated"]
+        if e["final_routing"] == "gate3_ready"
+    ]
+    if gate3_params:
+        write_approval_request(
+            proposal_id, node_revision, gate3_params,
+            candidates, patterns, allowed, proposals_dir,
+        )
+
+    routing_counts: dict[str, int] = {}
+    for e in gate_decision["parameters_evaluated"]:
+        routing_counts[e["final_routing"]] = routing_counts.get(e["final_routing"], 0) + 1
+
+    print(f"PROPOSED {proposal_id}")
+    print(f"  Records evaluated: {n_total}")
+    for routing in sorted(routing_counts):
+        print(f"  {routing}: {routing_counts[routing]}")
+    if gate3_params:
+        print(f"  Gate 3 review required for: {', '.join(gate3_params)}")
+        print(f"  Run: eval-cal-node review --proposal {proposal_id}")
+    else:
+        print("  No parameters reached Gate 3; nothing to review.")
     return 0
 
 
@@ -55,9 +130,19 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 def cmd_review(args: argparse.Namespace) -> int:
     """Handle the 'review' subcommand."""
+    from eval_cal_node.config import load_config
     from eval_cal_node.services.gate3 import review_proposal
     proposals_dir = Path(args.proposals_dir) if args.proposals_dir else DEFAULT_PROPOSALS_DIR
-    return review_proposal(args.proposal, proposals_dir)
+
+    # Config is needed so a 'declined' decision can compute its hold-after-decline
+    # thresholds; without it that doctrine is silently unenforced.
+    try:
+        config = load_config(Path(args.config) if args.config else None)
+    except (CalNodeError, FileNotFoundError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
+
+    return review_proposal(args.proposal, proposals_dir, config=config)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -73,6 +158,12 @@ def build_parser() -> argparse.ArgumentParser:
     rec.add_argument("--backfill", action="store_true", help="Allow records from prior node revisions")
     rec.add_argument("--records-dir", default=None, help="Override records directory")
 
+    # propose
+    pp = sub.add_parser("propose", help="Run the gates over records and emit a proposal")
+    pp.add_argument("--records-dir", default=None, help="Override records directory")
+    pp.add_argument("--proposals-dir", default=None, help="Override proposals directory")
+    pp.add_argument("--config", default=None, help="Override config path")
+
     # status
     st = sub.add_parser("status", help="Report node status")
     st.add_argument("--records-dir", default=None, help="Override records directory")
@@ -82,6 +173,7 @@ def build_parser() -> argparse.ArgumentParser:
     rv = sub.add_parser("review", help="Review a Gate 3 proposal")
     rv.add_argument("--proposal", required=True, help="Proposal ID to review")
     rv.add_argument("--proposals-dir", default=None, help="Override proposals directory")
+    rv.add_argument("--config", default=None, help="Override config path")
 
     return parser
 
@@ -96,6 +188,7 @@ def main() -> None:
 
     handlers = {
         "record": cmd_record,
+        "propose": cmd_propose,
         "status": cmd_status,
         "review": cmd_review,
     }
