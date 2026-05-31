@@ -8,7 +8,11 @@ from pathlib import Path
 from eval_cal_node.errors import CalNodeError
 from eval_cal_node.validation.validate_record import validate_and_ingest_record
 
-DEFAULT_RECORDS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "records"
+# Records and proposals are written relative to the current working directory
+# so the tool behaves correctly whether run from a source checkout or installed
+# as a wheel. Override with --records-dir / --proposals-dir.
+DEFAULT_RECORDS_DIR = Path("records")
+DEFAULT_PROPOSALS_DIR = Path("proposals")
 
 
 def cmd_record(args: argparse.Namespace) -> int:
@@ -52,9 +56,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 def cmd_review(args: argparse.Namespace) -> int:
     """Handle the 'review' subcommand."""
     from eval_cal_node.services.gate3 import review_proposal
-    proposals_dir = Path(args.proposals_dir) if args.proposals_dir else (
-        Path(__file__).resolve().parent.parent.parent.parent / "proposals"
-    )
+    proposals_dir = Path(args.proposals_dir) if args.proposals_dir else DEFAULT_PROPOSALS_DIR
     return review_proposal(args.proposal, proposals_dir)
 
 

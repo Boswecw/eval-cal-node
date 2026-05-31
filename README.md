@@ -6,7 +6,7 @@ Post-implementation calibration node for the Forge Ecosystem.
 
 - **Repo type:** Standalone CLI subsystem
 - **Authority boundary:** Post-implementation calibration analysis and proposal emission; does not alter approved Eval parameter revisions directly
-- **Deep reference:** `config/cal_node_config.json`, `../../docs/canonical/ecosystem_canonical.md`
+- **Deep reference:** `src/eval_cal_node/data/cal_node_config.json`, `../../docs/canonical/ecosystem_canonical.md`
 - **README role:** CLI entrypoint overview
 - **Truth note:** Calibration proposals are candidates only; no proposal becomes part of an approved Eval parameter revision without explicit Gate 3 human approval
 
@@ -49,7 +49,7 @@ eval-cal-node review --proposal <proposal_id>
 
 ## Allowed calibration targets (v0)
 
-13 parameters: hazard weights, merge thresholds, occupancy priors. See `config/cal_node_config.json` for bounds.
+13 parameters: hazard weights, merge thresholds, occupancy priors. See `src/eval_cal_node/data/cal_node_config.json` for bounds.
 
 ## Status
 

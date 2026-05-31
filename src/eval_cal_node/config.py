@@ -6,7 +6,7 @@ from pathlib import Path
 from eval_cal_node.errors import ConfigError
 from eval_cal_node.validation.schema_loader import validate_against_schema
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "cal_node_config.json"
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "data" / "cal_node_config.json"
 
 
 def load_config(config_path: Path | None = None) -> dict:

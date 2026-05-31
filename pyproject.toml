@@ -23,6 +23,9 @@ eval-cal-node = "eval_cal_node.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+eval_cal_node = ["schemas/*.json", "data/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
