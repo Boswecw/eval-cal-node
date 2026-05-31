@@ -54,6 +54,10 @@ eval-cal-node review --proposal <proposal_id>
 
 13 parameters: hazard weights, merge thresholds, occupancy priors. See `src/eval_cal_node/data/cal_node_config.json` for bounds.
 
+## Operator guide & examples
+
+See [`docs/operator-guide.md`](docs/operator-guide.md) for the full record → propose → review workflow and the record format. Eight ready-to-ingest sample records live in [`examples/records/`](examples/records/).
+
 ## Status
 
 Eval Cal Node v0 — initial implementation.

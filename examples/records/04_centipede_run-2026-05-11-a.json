@@ -1,0 +1,47 @@
+{
+  "record_id": "b4bf9133245b90de38d318296f866c8e5f7a973b7bc11be772c119cbb6ea98f7",
+  "slice_ref": {
+    "repo": "centipede",
+    "base_commit": "55cc",
+    "head_commit": "66dd",
+    "run_id": "run-2026-05-11-a"
+  },
+  "eval_parameter_revision": "eval_params_2026_05_rev7",
+  "eval_signals": {
+    "hazard_score": 0.82,
+    "hazard_tier": "high",
+    "merge_decision": "block",
+    "reason_codes": [
+      "hazard_blocking_threshold_exceeded"
+    ],
+    "selected_hidden": 1.0,
+    "selected_method": "chao1",
+    "chao2_available": false,
+    "mean_psi_post": 0.22,
+    "max_psi_post": 0.41,
+    "null_coverage_ratio": 0.12,
+    "k_eff": 4,
+    "defect_count": 2,
+    "reviewer_count": 3
+  },
+  "system_md_signals": {
+    "declared_subsystems_updated": [
+      "forge-eval"
+    ],
+    "declared_boundary_after": "Pack K landed; merge shipped clean"
+  },
+  "reconciliation_outcome": {
+    "drift_found": true,
+    "drift_types": [
+      "false_block"
+    ],
+    "severity": "moderate",
+    "implicated_parameters": [
+      "hazard_blocking_threshold"
+    ],
+    "disposition": "confirmed_drift",
+    "notes": "hazard tier high but post-merge telemetry clean"
+  },
+  "record_version": "cal_record_v1",
+  "recorded_at_revision": "cal_node_rev1"
+}

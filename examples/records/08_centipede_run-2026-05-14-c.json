@@ -1,0 +1,47 @@
+{
+  "record_id": "303134b5430d2bf88e81a4926d55922bbb12bc4c1c1947fb8c7b284739b68af1",
+  "slice_ref": {
+    "repo": "centipede",
+    "base_commit": "cc01",
+    "head_commit": "cc02",
+    "run_id": "run-2026-05-14-c"
+  },
+  "eval_parameter_revision": "eval_params_2026_05_rev7",
+  "eval_signals": {
+    "hazard_score": 0.24,
+    "hazard_tier": "low",
+    "merge_decision": "caution",
+    "reason_codes": [
+      "merge_caution_threshold_grazed"
+    ],
+    "selected_hidden": 0.0,
+    "selected_method": "chao1",
+    "chao2_available": false,
+    "mean_psi_post": 0.1,
+    "max_psi_post": 0.19,
+    "null_coverage_ratio": 0.05,
+    "k_eff": 2,
+    "defect_count": 0,
+    "reviewer_count": 2
+  },
+  "system_md_signals": {
+    "declared_subsystems_updated": [
+      "cli"
+    ],
+    "declared_boundary_after": "doc-only slice"
+  },
+  "reconciliation_outcome": {
+    "drift_found": true,
+    "drift_types": [
+      "false_caution"
+    ],
+    "severity": "minor",
+    "implicated_parameters": [
+      "merge_decision_caution_threshold"
+    ],
+    "disposition": "false_alarm",
+    "notes": "caution raised on a doc-only change"
+  },
+  "record_version": "cal_record_v1",
+  "recorded_at_revision": "cal_node_rev1"
+}

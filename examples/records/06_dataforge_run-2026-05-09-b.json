@@ -1,0 +1,48 @@
+{
+  "record_id": "6f139057404d72a88a97f313f9aa39cceae55f723436f28feff52124221dde16",
+  "slice_ref": {
+    "repo": "dataforge",
+    "base_commit": "aa01",
+    "head_commit": "aa02",
+    "run_id": "run-2026-05-09-b"
+  },
+  "eval_parameter_revision": "eval_params_2026_05_rev7",
+  "eval_signals": {
+    "hazard_score": 0.46,
+    "hazard_tier": "guarded",
+    "merge_decision": "caution",
+    "reason_codes": [
+      "occupancy_prior_elevated"
+    ],
+    "selected_hidden": 2.0,
+    "selected_method": "chao2",
+    "chao2_available": true,
+    "mean_psi_post": 0.35,
+    "max_psi_post": 0.58,
+    "null_coverage_ratio": 0.3,
+    "k_eff": 3,
+    "defect_count": 1,
+    "reviewer_count": 2
+  },
+  "system_md_signals": {
+    "declared_subsystems_updated": [
+      "occupancy-model"
+    ],
+    "declared_boundary_after": "occupancy refactor verified, no real risk"
+  },
+  "reconciliation_outcome": {
+    "drift_found": true,
+    "drift_types": [
+      "false_caution",
+      "occupancy_overcautious"
+    ],
+    "severity": "minor",
+    "implicated_parameters": [
+      "occupancy_prior_base"
+    ],
+    "disposition": "confirmed_drift",
+    "notes": "occupancy prior pushed a caution that reviewers judged unnecessary"
+  },
+  "record_version": "cal_record_v1",
+  "recorded_at_revision": "cal_node_rev1"
+}

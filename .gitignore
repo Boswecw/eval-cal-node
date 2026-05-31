@@ -4,5 +4,6 @@ __pycache__/
 .venv/
 build/
 dist/
-records/
-proposals/
+# Runtime output dirs at the repo root (anchored so examples/records/ is kept)
+/records/
+/proposals/
