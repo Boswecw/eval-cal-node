@@ -23,6 +23,15 @@ for p in (_SDK_PATH, _DATAFORGE_LOCAL, _FORGE_EVAL):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
+# This is an end-to-end integration test that requires the surrounding Forge
+# monorepo (fastapi + the forge_lineage_sdk / forge_eval source trees resolved
+# via the sys.path entries above). When eval-cal-node is checked out standalone
+# those are unavailable, so skip cleanly rather than fail at collection.
+pytest.importorskip("fastapi")
+pytest.importorskip("fastapi.testclient")
+pytest.importorskip("forge_lineage_sdk")
+pytest.importorskip("forge_eval")
+
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 

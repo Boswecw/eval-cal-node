@@ -12,6 +12,11 @@ dependencies = [
     "PyYAML>=6.0.1",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+]
+
 [project.scripts]
 eval-cal-node = "eval_cal_node.cli:main"
 

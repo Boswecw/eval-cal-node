@@ -7,6 +7,13 @@ from pathlib import Path
 
 import pytest
 
+# Phase 04 exercises the Evaluation Spine contract-admission layer, which is
+# backed by the internal forge-contract-core package. When eval-cal-node is
+# checked out standalone that package is unavailable and the contract layer
+# fails closed by design, so skip these tests cleanly rather than fail.
+pytest.importorskip("forge_contract_core.validators.families")
+pytest.importorskip("forge_contract_core.validators.role_matrix")
+
 from eval_cal_node.contracts.evaluation_spine import (
     EvaluationSpineContractError,
     validate_eval_calibration_report_payload,
