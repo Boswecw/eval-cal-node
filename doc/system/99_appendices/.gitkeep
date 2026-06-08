@@ -1,0 +1,4 @@
+# 99_appendices
+
+Class-required `doc/system/` subtree folder (kept for the documentation structure gate).
+Narrative content lives in the numbered `NN-*.md` chapters at the `doc/system/` root.
