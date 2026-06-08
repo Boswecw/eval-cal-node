@@ -160,6 +160,14 @@ def cmd_review(args: argparse.Namespace) -> int:
         print(f"ERROR: Invalid proposal id: {proposal_id!r}", file=sys.stderr)
         return 1
 
+    # Gate 3 must fail closed when calibration lineage cannot be verified. The
+    # ForgeLineage SDK is a Forge-monorepo dependency, so verification is opt-in:
+    # when the operator supplies the lineage node ids we enforce it and refuse to
+    # review on any negative/unavailable result; otherwise we proceed but make the
+    # unverified state explicit rather than approving silently.
+    if not _verify_gate3_lineage(args):
+        return 1
+
     # Config is needed so a 'declined' decision can compute its hold-after-decline
     # thresholds; without it that doctrine is silently unenforced.
     try:
@@ -169,6 +177,52 @@ def cmd_review(args: argparse.Namespace) -> int:
         return 1
 
     return review_proposal(args.proposal, proposals_dir, config=config)
+
+
+def _verify_gate3_lineage(args: argparse.Namespace) -> bool:
+    """Enforce the Gate 3 lineage fail-closed rule when lineage ids are supplied.
+
+    Returns True if review may proceed, False if it must be refused. With no
+    lineage ids, prints a warning and returns True (standalone mode).
+    """
+    bundle_node = args.forge_eval_bundle_node_id
+    record_node = args.record_node_id
+
+    if not bundle_node and not record_node:
+        print(
+            "WARNING: Gate 3 lineage was NOT verified (no --forge-eval-bundle-node-id "
+            "/ --record-node-id supplied); proceeding without lineage provenance.",
+            file=sys.stderr,
+        )
+        return True
+
+    if not (bundle_node and record_node):
+        print(
+            "ERROR: --forge-eval-bundle-node-id and --record-node-id must be given "
+            "together to verify Gate 3 lineage.",
+            file=sys.stderr,
+        )
+        return False
+
+    from eval_cal_node.lineage.gate3 import check_gate3_lineage
+
+    decision = check_gate3_lineage(
+        forge_eval_evidence_bundle_node_id=bundle_node,
+        eval_cal_record_node_id=record_node,
+        expected_source_payload_hash=args.expected_source_hash,
+        base_url=args.lineage_url,
+    )
+    if not decision.allowed:
+        print(
+            "ERROR: Gate 3 lineage verification failed (fail-closed): "
+            f"availability={decision.availability}; "
+            f"{decision.reason_class}: {decision.reason_message}",
+            file=sys.stderr,
+        )
+        return False
+
+    print(f"Lineage verified ({decision.availability}).")
+    return True
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -206,6 +260,24 @@ def build_parser() -> argparse.ArgumentParser:
     rv.add_argument("--proposal", required=True, help="Proposal ID to review")
     rv.add_argument("--proposals-dir", default=None, help="Override proposals directory")
     rv.add_argument("--config", default=None, help="Override config path")
+    rv.add_argument(
+        "--forge-eval-bundle-node-id", default=None,
+        help="ForgeLineage node id of the source forge-eval evidence bundle. "
+             "Supplying this and --record-node-id enables Gate 3 lineage verification.",
+    )
+    rv.add_argument(
+        "--record-node-id", default=None,
+        help="ForgeLineage node id of the eval-cal-node record "
+             "(required together with --forge-eval-bundle-node-id).",
+    )
+    rv.add_argument(
+        "--expected-source-hash", default=None,
+        help="Expected sha256:... of the source payload to match against the lineage edge.",
+    )
+    rv.add_argument(
+        "--lineage-url", default="http://127.0.0.1:8005",
+        help="Base URL of the ForgeLineage/DataForge service (default: %(default)s).",
+    )
 
     return parser
 

@@ -88,6 +88,77 @@ def test_review_rejects_path_traversal_id(tmp_path, capsys):
     assert "Invalid proposal id" in capsys.readouterr().err
 
 
+def _propose_for_review(tmp_path):
+    """Ingest + propose so a real gate3-ready proposal exists; return ids/dirs."""
+    records_dir = tmp_path / "records"
+    proposals_dir = tmp_path / "proposals"
+    _ingest(records_dir, "hazard_blocking_threshold")
+    _run(["propose", "--records-dir", str(records_dir),
+          "--proposals-dir", str(proposals_dir)])
+    proposal_id = json.load(
+        open(list(proposals_dir.glob("*_gate_decision.json"))[0])
+    )["proposal_id"]
+    return proposal_id, proposals_dir
+
+
+def _patch_lineage(monkeypatch, *, allowed):
+    from eval_cal_node.lineage.gate3 import LineageGate3Decision
+
+    def fake_check(**kwargs):
+        return LineageGate3Decision(
+            allowed=allowed,
+            availability="lineage_available" if allowed else "lineage_missing",
+            reason_class=None if allowed else "enforcement_unavailable",
+            reason_message=None if allowed else "lineage could not be verified",
+        )
+
+    monkeypatch.setattr(
+        "eval_cal_node.lineage.gate3.check_gate3_lineage", fake_check
+    )
+
+
+def test_review_fails_closed_when_lineage_unverified(tmp_path, monkeypatch, capsys):
+    proposal_id, proposals_dir = _propose_for_review(tmp_path)
+    _patch_lineage(monkeypatch, allowed=False)
+    monkeypatch.setattr("builtins.input", lambda *a, **k: "yes")
+
+    rc = _run(["review", "--proposal", proposal_id, "--proposals-dir", str(proposals_dir),
+               "--forge-eval-bundle-node-id", "node-bundle", "--record-node-id", "node-rec"])
+    assert rc == 1
+    assert "fail-closed" in capsys.readouterr().err
+    # Must not have stamped an acceptance.
+    assert not (proposals_dir / f"{proposal_id}_review.json").exists()
+
+
+def test_review_proceeds_when_lineage_verified(tmp_path, monkeypatch, capsys):
+    proposal_id, proposals_dir = _propose_for_review(tmp_path)
+    _patch_lineage(monkeypatch, allowed=True)
+    monkeypatch.setattr("builtins.input", lambda *a, **k: "yes")
+
+    rc = _run(["review", "--proposal", proposal_id, "--proposals-dir", str(proposals_dir),
+               "--forge-eval-bundle-node-id", "node-bundle", "--record-node-id", "node-rec"])
+    assert rc == 0
+    assert "Lineage verified" in capsys.readouterr().out
+    review = json.load(open(proposals_dir / f"{proposal_id}_review.json"))
+    assert review["decision"] == "accepted"
+
+
+def test_review_requires_both_lineage_ids(tmp_path, capsys):
+    proposal_id, proposals_dir = _propose_for_review(tmp_path)
+    rc = _run(["review", "--proposal", proposal_id, "--proposals-dir", str(proposals_dir),
+               "--forge-eval-bundle-node-id", "node-bundle"])  # missing --record-node-id
+    assert rc == 1
+    assert "must be given together" in capsys.readouterr().err
+
+
+def test_review_warns_when_lineage_not_supplied(tmp_path, monkeypatch, capsys):
+    proposal_id, proposals_dir = _propose_for_review(tmp_path)
+    monkeypatch.setattr("builtins.input", lambda *a, **k: "yes")
+    rc = _run(["review", "--proposal", proposal_id, "--proposals-dir", str(proposals_dir)])
+    assert rc == 0
+    assert "NOT verified" in capsys.readouterr().err
+
+
 def test_propose_then_review_decline_sets_hold(tmp_path, monkeypatch):
     """A CLI decline must compute hold-after-decline thresholds, which only
     happens when cmd_review passes config into review_proposal."""

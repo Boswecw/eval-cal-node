@@ -88,6 +88,15 @@ Prints each proposed change with its evidence and prompts `yes`/`no`.
   re-pestering you with a proposal you already rejected until materially more
   evidence exists.
 
+**Gate 3 lineage (fail-closed).** Gate 3 must not approve when calibration
+lineage cannot be verified. Because the ForgeLineage SDK is a Forge-monorepo
+dependency, verification is opt-in: pass both `--forge-eval-bundle-node-id` and
+`--record-node-id` (and optionally `--expected-source-hash` / `--lineage-url`)
+to enforce it. Any negative or unavailable result refuses the review
+(exit 1) before you are prompted. With no lineage ids supplied, `review` runs
+in standalone mode and prints an explicit "lineage NOT verified" warning rather
+than approving silently.
+
 ## Record format
 
 Each record captures **three surfaces** for one implementation slice. All fields
