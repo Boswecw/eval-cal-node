@@ -17,7 +17,7 @@
   "properties": {
     "record_id": {
       "type": "string",
-      "description": "SHA-256 of slice_ref fields: repo + base_commit + head_commit + run_id"
+      "description": "SHA-256 of slice_ref fields joined with a NUL separator: repo + '\\u0000' + base_commit + '\\u0000' + head_commit + '\\u0000' + run_id"
     },
     "slice_ref": {
       "type": "object",

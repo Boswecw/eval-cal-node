@@ -16,8 +16,19 @@ NODE_REVISION = "cal_node_rev1"
 
 
 def compute_record_id(slice_ref: dict) -> str:
-    """Compute deterministic record_id from slice_ref fields."""
-    raw = slice_ref["repo"] + slice_ref["base_commit"] + slice_ref["head_commit"] + slice_ref["run_id"]
+    """Compute deterministic record_id from slice_ref fields.
+
+    Fields are joined with a NUL separator (which cannot appear in the source
+    strings) so that distinct field boundaries cannot collide — e.g. repo="ab"
+    + base="c" must not hash the same as repo="a" + base="bc".
+    """
+    parts = [
+        slice_ref["repo"],
+        slice_ref["base_commit"],
+        slice_ref["head_commit"],
+        slice_ref["run_id"],
+    ]
+    raw = "\x00".join(parts)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 

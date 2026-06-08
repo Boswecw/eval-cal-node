@@ -35,7 +35,7 @@ def make_record(
     recorded_at_revision: str = "cal_node_rev1",
 ) -> dict:
     """Build a valid calibration record with sensible defaults."""
-    raw = repo + base_commit + head_commit + run_id
+    raw = "\x00".join([repo, base_commit, head_commit, run_id])
     record_id = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     return {

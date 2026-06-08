@@ -39,8 +39,9 @@ eval-cal-node record --input examples/records/01_forge-eval_run-2026-05-04-a.jso
 ```
 
 - The record is validated against the strict `cal_record_v1` schema.
-- `record_id` must equal `sha256(repo + base_commit + head_commit + run_id)`;
-  a mismatch is rejected (fail-closed).
+- `record_id` must equal the SHA-256 of `repo`, `base_commit`, `head_commit`
+  and `run_id` joined with a NUL (`\0`) separator; a mismatch is rejected
+  (fail-closed).
 - Duplicate records (same `record_id`) are rejected.
 - Records whose `recorded_at_revision` differs from the node revision are
   rejected unless you pass `--backfill` (for importing history from a prior
