@@ -16,6 +16,12 @@ dependencies = [
 test = [
     "pytest>=7.0",
 ]
+# Optional: enables the consumer-side ForgeLineage Gate 3 transport checks
+# (src/eval_cal_node/lineage/). The forge_lineage_sdk / forge_contract_core
+# packages are Forge-monorepo-only and are resolved at runtime, not via pip.
+lineage = [
+    "httpx>=0.27",
+]
 
 [project.scripts]
 eval-cal-node = "eval_cal_node.cli:main"
