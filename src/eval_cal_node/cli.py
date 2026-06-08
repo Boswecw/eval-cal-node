@@ -153,6 +153,13 @@ def cmd_review(args: argparse.Namespace) -> int:
     from eval_cal_node.services.gate3 import review_proposal
     proposals_dir = Path(args.proposals_dir) if args.proposals_dir else DEFAULT_PROPOSALS_DIR
 
+    # The proposal id is interpolated into artifact filenames, so it must be a
+    # single safe path component — reject separators / traversal up front.
+    proposal_id = args.proposal
+    if proposal_id in ("", ".", "..") or proposal_id != Path(proposal_id).name:
+        print(f"ERROR: Invalid proposal id: {proposal_id!r}", file=sys.stderr)
+        return 1
+
     # Config is needed so a 'declined' decision can compute its hold-after-decline
     # thresholds; without it that doctrine is silently unenforced.
     try:

@@ -79,6 +79,15 @@ def test_report_writes_summary(tmp_path, capsys):
     assert "Eval Cal Node Summary" in written[0].read_text()
 
 
+def test_review_rejects_path_traversal_id(tmp_path, capsys):
+    proposals_dir = tmp_path / "proposals"
+    proposals_dir.mkdir()
+    rc = _run(["review", "--proposal", "../../etc/passwd",
+               "--proposals-dir", str(proposals_dir)])
+    assert rc == 1
+    assert "Invalid proposal id" in capsys.readouterr().err
+
+
 def test_propose_then_review_decline_sets_hold(tmp_path, monkeypatch):
     """A CLI decline must compute hold-after-decline thresholds, which only
     happens when cmd_review passes config into review_proposal."""
