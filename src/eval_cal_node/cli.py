@@ -13,6 +13,7 @@ from eval_cal_node.validation.validate_record import validate_and_ingest_record
 # as a wheel. Override with --records-dir / --proposals-dir.
 DEFAULT_RECORDS_DIR = Path("records")
 DEFAULT_PROPOSALS_DIR = Path("proposals")
+DEFAULT_REPORTS_DIR = Path("reports")
 
 
 def cmd_record(args: argparse.Namespace) -> int:
@@ -128,11 +129,44 @@ def cmd_status(args: argparse.Namespace) -> int:
     return report_status(records_dir, config_path)
 
 
+def cmd_report(args: argparse.Namespace) -> int:
+    """Handle the 'report' subcommand — write a markdown status summary."""
+    from eval_cal_node.services.status import generate_summary_report
+
+    records_dir = Path(args.records_dir) if args.records_dir else DEFAULT_RECORDS_DIR
+    reports_dir = Path(args.reports_dir) if args.reports_dir else DEFAULT_REPORTS_DIR
+    config_path = Path(args.config) if args.config else None
+
+    try:
+        report_path = generate_summary_report(records_dir, reports_dir, config_path)
+    except (CalNodeError, FileNotFoundError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
+
+    print(f"REPORT {report_path}")
+    return 0
+
+
 def cmd_review(args: argparse.Namespace) -> int:
     """Handle the 'review' subcommand."""
     from eval_cal_node.config import load_config
     from eval_cal_node.services.gate3 import review_proposal
     proposals_dir = Path(args.proposals_dir) if args.proposals_dir else DEFAULT_PROPOSALS_DIR
+
+    # The proposal id is interpolated into artifact filenames, so it must be a
+    # single safe path component — reject separators / traversal up front.
+    proposal_id = args.proposal
+    if proposal_id in ("", ".", "..") or proposal_id != Path(proposal_id).name:
+        print(f"ERROR: Invalid proposal id: {proposal_id!r}", file=sys.stderr)
+        return 1
+
+    # Gate 3 must fail closed when calibration lineage cannot be verified. The
+    # ForgeLineage SDK is a Forge-monorepo dependency, so verification is opt-in:
+    # when the operator supplies the lineage node ids we enforce it and refuse to
+    # review on any negative/unavailable result; otherwise we proceed but make the
+    # unverified state explicit rather than approving silently.
+    if not _verify_gate3_lineage(args):
+        return 1
 
     # Config is needed so a 'declined' decision can compute its hold-after-decline
     # thresholds; without it that doctrine is silently unenforced.
@@ -143,6 +177,52 @@ def cmd_review(args: argparse.Namespace) -> int:
         return 1
 
     return review_proposal(args.proposal, proposals_dir, config=config)
+
+
+def _verify_gate3_lineage(args: argparse.Namespace) -> bool:
+    """Enforce the Gate 3 lineage fail-closed rule when lineage ids are supplied.
+
+    Returns True if review may proceed, False if it must be refused. With no
+    lineage ids, prints a warning and returns True (standalone mode).
+    """
+    bundle_node = args.forge_eval_bundle_node_id
+    record_node = args.record_node_id
+
+    if not bundle_node and not record_node:
+        print(
+            "WARNING: Gate 3 lineage was NOT verified (no --forge-eval-bundle-node-id "
+            "/ --record-node-id supplied); proceeding without lineage provenance.",
+            file=sys.stderr,
+        )
+        return True
+
+    if not (bundle_node and record_node):
+        print(
+            "ERROR: --forge-eval-bundle-node-id and --record-node-id must be given "
+            "together to verify Gate 3 lineage.",
+            file=sys.stderr,
+        )
+        return False
+
+    from eval_cal_node.lineage.gate3 import check_gate3_lineage
+
+    decision = check_gate3_lineage(
+        forge_eval_evidence_bundle_node_id=bundle_node,
+        eval_cal_record_node_id=record_node,
+        expected_source_payload_hash=args.expected_source_hash,
+        base_url=args.lineage_url,
+    )
+    if not decision.allowed:
+        print(
+            "ERROR: Gate 3 lineage verification failed (fail-closed): "
+            f"availability={decision.availability}; "
+            f"{decision.reason_class}: {decision.reason_message}",
+            file=sys.stderr,
+        )
+        return False
+
+    print(f"Lineage verified ({decision.availability}).")
+    return True
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -169,11 +249,35 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("--records-dir", default=None, help="Override records directory")
     st.add_argument("--config", default=None, help="Override config path")
 
+    # report
+    rp = sub.add_parser("report", help="Write a markdown status summary")
+    rp.add_argument("--records-dir", default=None, help="Override records directory")
+    rp.add_argument("--reports-dir", default=None, help="Override reports directory")
+    rp.add_argument("--config", default=None, help="Override config path")
+
     # review
     rv = sub.add_parser("review", help="Review a Gate 3 proposal")
     rv.add_argument("--proposal", required=True, help="Proposal ID to review")
     rv.add_argument("--proposals-dir", default=None, help="Override proposals directory")
     rv.add_argument("--config", default=None, help="Override config path")
+    rv.add_argument(
+        "--forge-eval-bundle-node-id", default=None,
+        help="ForgeLineage node id of the source forge-eval evidence bundle. "
+             "Supplying this and --record-node-id enables Gate 3 lineage verification.",
+    )
+    rv.add_argument(
+        "--record-node-id", default=None,
+        help="ForgeLineage node id of the eval-cal-node record "
+             "(required together with --forge-eval-bundle-node-id).",
+    )
+    rv.add_argument(
+        "--expected-source-hash", default=None,
+        help="Expected sha256:... of the source payload to match against the lineage edge.",
+    )
+    rv.add_argument(
+        "--lineage-url", default="http://127.0.0.1:8005",
+        help="Base URL of the ForgeLineage/DataForge service (default: %(default)s).",
+    )
 
     return parser
 
@@ -190,6 +294,11 @@ def main() -> None:
         "record": cmd_record,
         "propose": cmd_propose,
         "status": cmd_status,
+        "report": cmd_report,
         "review": cmd_review,
     }
     sys.exit(handlers[args.command](args))
+
+
+if __name__ == "__main__":
+    main()

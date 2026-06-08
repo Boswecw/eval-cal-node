@@ -88,6 +88,15 @@ class TestConfigLoading:
         allowed = get_allowed_parameters(config)
         assert len(allowed) == 13
 
+    def test_config_allowed_set_matches_gate2_allowlist(self):
+        """The production config's allowed targets must match Gate 2's structural
+        allow-list exactly, so the two sources of truth cannot silently drift."""
+        from eval_cal_node.services.gate2 import ALLOWED_PARAMETERS
+
+        config = load_config()
+        allowed = set(get_allowed_parameters(config).keys())
+        assert allowed == set(ALLOWED_PARAMETERS)
+
     def test_missing_required_field_fails(self, tmp_path):
         """Missing required field fails schema validation."""
         cfg = _base_config()

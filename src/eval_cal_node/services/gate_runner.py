@@ -12,7 +12,9 @@ from eval_cal_node.services.pattern_extractor import PatternResult
 
 
 def _compute_proposal_id(node_revision: str, record_count: int, param_names: list[str]) -> str:
-    raw = node_revision + str(record_count) + "|".join(sorted(param_names))
+    # NUL-delimited so the boundary between node_revision and record_count
+    # cannot collide (e.g. rev "...1" + count 10 vs rev "...11" + count 0).
+    raw = "\x00".join([node_revision, str(record_count), "|".join(sorted(param_names))])
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 

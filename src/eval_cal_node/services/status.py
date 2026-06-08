@@ -6,6 +6,7 @@ from datetime import date
 from pathlib import Path
 
 from eval_cal_node.config import load_config, get_allowed_parameters
+from eval_cal_node.errors import CalNodeError
 from eval_cal_node.services.calibration_math import compute_all_candidates
 from eval_cal_node.services.pattern_extractor import extract_patterns, load_all_records
 
@@ -14,7 +15,7 @@ def report_status(records_dir: Path, config_path: Path | None = None) -> int:
     """Report current node status to stdout. Returns exit code."""
     try:
         config = load_config(config_path)
-    except Exception as e:
+    except (CalNodeError, FileNotFoundError, json.JSONDecodeError) as e:
         print(f"ERROR: Failed to load config: {e}", file=sys.stderr)
         return 1
 

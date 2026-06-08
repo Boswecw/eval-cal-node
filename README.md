@@ -46,6 +46,9 @@ eval-cal-node propose
 # Check node status
 eval-cal-node status
 
+# Write a markdown status summary to the reports directory
+eval-cal-node report
+
 # Review a Gate 3 proposal
 eval-cal-node review --proposal <proposal_id>
 ```

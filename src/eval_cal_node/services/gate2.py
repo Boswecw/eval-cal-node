@@ -2,33 +2,9 @@
 
 from eval_cal_node.services.calibration_math import CalibrationCandidate
 
-ALLOWED_PARAMETERS = {
-    "hazard_hidden_uplift_strength",
-    "hazard_structural_risk_strength",
-    "hazard_occupancy_strength",
-    "hazard_support_uplift_strength",
-    "hazard_uncertainty_boost",
-    "hazard_blocking_threshold",
-    "merge_decision_caution_threshold",
-    "merge_decision_block_threshold",
-    "occupancy_prior_base",
-    "occupancy_support_uplift",
-    "occupancy_detection_assumption",
-    "occupancy_miss_penalty_strength",
-    "occupancy_null_uncertainty_boost",
-}
-
-FORBIDDEN_TARGETS = {
-    "stage_sequence",
-    "required_artifact_list",
-    "schema_shapes",
-    "mandatory_fail_closed_conditions",
-    "authority_boundaries",
-    "human_approval_requirements",
-    "canonical_evidence_rules",
-}
-
-# Parameters that affect the same Eval math surface — opposing movements are destabilizing
+# Parameters that affect the same Eval math surface — opposing movements are
+# destabilizing. This mapping is also the single in-module source of truth for
+# which parameter names are legitimate calibration targets (see ALLOWED_PARAMETERS).
 SURFACE_GROUPS = {
     "hazard": {
         "hazard_hidden_uplift_strength",
@@ -51,6 +27,13 @@ SURFACE_GROUPS = {
     },
 }
 
+# Structural allow-list of calibratable parameter names, derived from the surface
+# groups so the names are written exactly once. This is a control-envelope guard
+# independent of the per-parameter ``allowed`` flag in config: a name that is not
+# a recognized calibration target is rejected even if a caller marks it allowed.
+# ``test_config`` keeps this set in sync with the production config.
+ALLOWED_PARAMETERS = frozenset().union(*SURFACE_GROUPS.values())
+
 
 def evaluate_gate2(
     candidate: CalibrationCandidate,
@@ -62,13 +45,9 @@ def evaluate_gate2(
     """
     param_name = candidate.param_name
 
-    # Check allowed list
+    # Check allowed list (structural control-envelope guard)
     if param_name not in ALLOWED_PARAMETERS:
         return "reject", f"parameter '{param_name}' not in allowed calibration targets"
-
-    # Check forbidden target
-    if param_name in FORBIDDEN_TARGETS:
-        return "reject", f"parameter '{param_name}' is a forbidden target"
 
     # Check proposed value within bounds
     if candidate.proposed_value < param_config["param_min"]:

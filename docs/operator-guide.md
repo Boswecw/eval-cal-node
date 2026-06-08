@@ -39,8 +39,9 @@ eval-cal-node record --input examples/records/01_forge-eval_run-2026-05-04-a.jso
 ```
 
 - The record is validated against the strict `cal_record_v1` schema.
-- `record_id` must equal `sha256(repo + base_commit + head_commit + run_id)`;
-  a mismatch is rejected (fail-closed).
+- `record_id` must equal the SHA-256 of `repo`, `base_commit`, `head_commit`
+  and `run_id` joined with a NUL (`\0`) separator; a mismatch is rejected
+  (fail-closed).
 - Duplicate records (same `record_id`) are rejected.
 - Records whose `recorded_at_revision` differs from the node revision are
   rejected unless you pass `--backfill` (for importing history from a prior
@@ -86,6 +87,15 @@ Prints each proposed change with its evidence and prompts `yes`/`no`.
   `recurrence + min_new_recurrence` are reached. This prevents the node from
   re-pestering you with a proposal you already rejected until materially more
   evidence exists.
+
+**Gate 3 lineage (fail-closed).** Gate 3 must not approve when calibration
+lineage cannot be verified. Because the ForgeLineage SDK is a Forge-monorepo
+dependency, verification is opt-in: pass both `--forge-eval-bundle-node-id` and
+`--record-node-id` (and optionally `--expected-source-hash` / `--lineage-url`)
+to enforce it. Any negative or unavailable result refuses the review
+(exit 1) before you are prompted. With no lineage ids supplied, `review` runs
+in standalone mode and prints an explicit "lineage NOT verified" warning rather
+than approving silently.
 
 ## Record format
 
