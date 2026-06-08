@@ -13,6 +13,7 @@ from eval_cal_node.validation.validate_record import validate_and_ingest_record
 # as a wheel. Override with --records-dir / --proposals-dir.
 DEFAULT_RECORDS_DIR = Path("records")
 DEFAULT_PROPOSALS_DIR = Path("proposals")
+DEFAULT_REPORTS_DIR = Path("reports")
 
 
 def cmd_record(args: argparse.Namespace) -> int:
@@ -128,6 +129,24 @@ def cmd_status(args: argparse.Namespace) -> int:
     return report_status(records_dir, config_path)
 
 
+def cmd_report(args: argparse.Namespace) -> int:
+    """Handle the 'report' subcommand — write a markdown status summary."""
+    from eval_cal_node.services.status import generate_summary_report
+
+    records_dir = Path(args.records_dir) if args.records_dir else DEFAULT_RECORDS_DIR
+    reports_dir = Path(args.reports_dir) if args.reports_dir else DEFAULT_REPORTS_DIR
+    config_path = Path(args.config) if args.config else None
+
+    try:
+        report_path = generate_summary_report(records_dir, reports_dir, config_path)
+    except (CalNodeError, FileNotFoundError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
+
+    print(f"REPORT {report_path}")
+    return 0
+
+
 def cmd_review(args: argparse.Namespace) -> int:
     """Handle the 'review' subcommand."""
     from eval_cal_node.config import load_config
@@ -169,6 +188,12 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("--records-dir", default=None, help="Override records directory")
     st.add_argument("--config", default=None, help="Override config path")
 
+    # report
+    rp = sub.add_parser("report", help="Write a markdown status summary")
+    rp.add_argument("--records-dir", default=None, help="Override records directory")
+    rp.add_argument("--reports-dir", default=None, help="Override reports directory")
+    rp.add_argument("--config", default=None, help="Override config path")
+
     # review
     rv = sub.add_parser("review", help="Review a Gate 3 proposal")
     rv.add_argument("--proposal", required=True, help="Proposal ID to review")
@@ -190,6 +215,11 @@ def main() -> None:
         "record": cmd_record,
         "propose": cmd_propose,
         "status": cmd_status,
+        "report": cmd_report,
         "review": cmd_review,
     }
     sys.exit(handlers[args.command](args))
+
+
+if __name__ == "__main__":
+    main()

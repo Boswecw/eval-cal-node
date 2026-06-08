@@ -28,6 +28,7 @@ def _run(argv):
         "record": cli.cmd_record,
         "propose": cli.cmd_propose,
         "status": cli.cmd_status,
+        "report": cli.cmd_report,
         "review": cli.cmd_review,
     }[args.command]
     return handler(args)
@@ -60,6 +61,22 @@ def test_propose_emits_artifacts(tmp_path, capsys):
     proposal_id = json.load(open(gd[0]))["proposal_id"]
     for suffix in ("proposal", "evidence", "param_delta", "approval_request"):
         assert (proposals_dir / f"{proposal_id}_{suffix}.json").exists(), suffix
+
+
+def test_report_writes_summary(tmp_path, capsys):
+    records_dir = tmp_path / "records"
+    reports_dir = tmp_path / "reports"
+    param = "hazard_blocking_threshold"
+    _ingest(records_dir, param)
+
+    rc = _run(["report", "--records-dir", str(records_dir),
+               "--reports-dir", str(reports_dir)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.startswith("REPORT ")
+    written = list(reports_dir.glob("*_summary.md"))
+    assert len(written) == 1
+    assert "Eval Cal Node Summary" in written[0].read_text()
 
 
 def test_propose_then_review_decline_sets_hold(tmp_path, monkeypatch):
