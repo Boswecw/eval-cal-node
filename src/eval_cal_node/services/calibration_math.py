@@ -21,6 +21,7 @@ class CalibrationCandidate:
         proposed_value: float,
         current_value: float,
         reason: str = "",
+        reason_code: str = "candidate",
     ) -> None:
         self.param_name = param_name
         self.status = status
@@ -32,6 +33,10 @@ class CalibrationCandidate:
         self.proposed_value = proposed_value
         self.current_value = current_value
         self.reason = reason
+        # Machine-readable classification of why this candidate landed where it
+        # did. Gate 1 maps these codes to outcomes instead of re-deriving the
+        # same thresholds, keeping a single source of truth for sufficiency.
+        self.reason_code = reason_code
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -45,6 +50,7 @@ class CalibrationCandidate:
             "proposed_value": self.proposed_value,
             "current_value": self.current_value,
             "reason": self.reason,
+            "reason_code": self.reason_code,
         }
 
 
@@ -89,6 +95,7 @@ def compute_candidate(
             proposed_value=proposed_value,
             current_value=current_value,
             reason=f"n_total_implicated ({pattern.n_total_implicated}) < min_sample_size ({min_sample_size})",
+            reason_code="insufficient_sample",
         )
 
     if pattern.recurrence_count < min_recurrence:
@@ -103,6 +110,7 @@ def compute_candidate(
             proposed_value=proposed_value,
             current_value=current_value,
             reason=f"recurrence_count ({pattern.recurrence_count}) < min_recurrence ({min_recurrence})",
+            reason_code="insufficient_recurrence",
         )
 
     # Step 1: rates
@@ -123,6 +131,7 @@ def compute_candidate(
             proposed_value=proposed_value,
             current_value=current_value,
             reason="conflicting signal: both false_block_rate and missed_block_rate > 0.3",
+            reason_code="conflicting_signal",
         )
 
     if abs(net_direction) < effect_floor:
@@ -137,6 +146,7 @@ def compute_candidate(
             proposed_value=proposed_value,
             current_value=current_value,
             reason=f"abs(net_direction) ({abs(net_direction):.6f}) < effect_floor ({effect_floor})",
+            reason_code="below_effect_floor",
         )
 
     # Step 3: bounded delta
