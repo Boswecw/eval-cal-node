@@ -260,6 +260,12 @@ def calibrate_forge_eval_bundle_file(input_path: Path, output_dir: Path) -> dict
     source_payload = _read_json_object(input_path)
     report_payload = build_eval_calibration_report_payload(source_payload)
     report_path = write_eval_calibration_report_payload(report_payload, output_dir)
+    # Opt-in, non-blocking lineage emission (default off; the calibration above is transport-free).
+    from eval_cal_node.lineage.spine_emit import emit_calibration_lineage
+
+    lineage_outcome = emit_calibration_lineage(
+        source_payload=source_payload, report_payload=report_payload
+    )
     return {
         "artifact_family": "eval_calibration_report",
         "artifact_version": 1,
@@ -267,6 +273,7 @@ def calibrate_forge_eval_bundle_file(input_path: Path, output_dir: Path) -> dict
         "output_hash": payload_sha256(report_payload),
         "validation_state": "passed",
         "payload": report_payload,
+        "lineage": lineage_outcome,
     }
 
 
