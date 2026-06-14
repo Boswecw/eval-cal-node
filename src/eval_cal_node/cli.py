@@ -279,7 +279,53 @@ def build_parser() -> argparse.ArgumentParser:
         help="Base URL of the ForgeLineage/DataForge service (default: %(default)s).",
     )
 
+    sub.add_parser("health", help="Bounded self-check for the ecosystem-health topology")
+
     return parser
+
+
+def cmd_health(_args: argparse.Namespace) -> int:
+    """Bounded, producer-owned self-check for the ecosystem-health topology.
+
+    eval-cal-node is a CLI producer with no HTTP surface; this gives a downstream consumer
+    (ForgeCommand's /ecosystem-health) a real health signal instead of a fabricated one. Verifies
+    the core calibrator/gate/lineage modules import; prints one JSON object. Exit 0 = ok, 1 = degraded.
+    """
+    import importlib
+    from datetime import datetime, timezone
+
+    checks: dict[str, str] = {}
+    status = "ok"
+    for label, module in (
+        ("calibrator", "eval_cal_node.services.evaluation_spine_calibrator"),
+        ("gate_runner", "eval_cal_node.services.gate_runner"),
+        ("lineage_emitter", "eval_cal_node.lineage.emitter"),
+    ):
+        try:
+            importlib.import_module(module)
+            checks[label] = "ok"
+        except Exception as exc:  # noqa: BLE001
+            checks[label] = f"error: {type(exc).__name__}"
+            status = "degraded"
+    try:
+        from importlib.metadata import version as _pkg_version
+
+        version = _pkg_version("eval-cal-node")
+    except Exception:  # noqa: BLE001
+        version = "unknown"
+    print(
+        json.dumps(
+            {
+                "service": "eval-cal-node",
+                "status": status,
+                "version": version,
+                "role": "evaluation-spine calibrator (CLI producer; no HTTP surface)",
+                "checks": checks,
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+    )
+    return 0 if status == "ok" else 1
 
 
 def main() -> None:
@@ -296,6 +342,7 @@ def main() -> None:
         "status": cmd_status,
         "report": cmd_report,
         "review": cmd_review,
+        "health": cmd_health,
     }
     sys.exit(handlers[args.command](args))
 
