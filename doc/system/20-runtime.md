@@ -24,6 +24,18 @@ A `eval-cal-node record` invocation runs the following deterministic pipeline:
    proposal + decision artifacts; `lineage/emitter.py` emits proposal and
    gate-decision lineage to DataForge-Local (best effort).
 
+### Evaluation Spine calibration lineage (opt-in)
+
+The Evaluation Spine calibrator (`services/evaluation_spine_calibrator.py`,
+`calibrate_forge_eval_bundle_file`) optionally emits cross-producer lineage after writing an
+`eval_calibration_report`, via `lineage/spine_emit.py` (`emit_calibration_lineage`). It emits an
+`eval_cal_record` node plus a `consumed` edge from the upstream forge-eval evidence-bundle node —
+the link a downstream consumer (ForgeCommand's self-healing gate-walk) traverses. It discovers the
+bundle node by matching `forge_eval_run_id` over `list_nodes("forge_eval_evidence_bundle")`, and
+sets the record's `record_id` to the `calibration_report_id` so ForgeMath can later find this node.
+**Default-OFF + fail-soft:** emits only when `EVAL_CAL_LINEAGE_URL` is set; any failure is logged
+and calibration still completes (the calibrator itself stays transport-free).
+
 ## State and idempotency
 
 - `hold_after_decline_cycles` suppresses re-proposing a parameter for a number of
