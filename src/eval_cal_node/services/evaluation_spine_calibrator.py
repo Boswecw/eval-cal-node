@@ -102,13 +102,31 @@ def _score_artifact_coverage(source_payload: dict[str, Any]) -> float:
     return round(len(required_kinds.intersection(observed)) / len(required_kinds), 6)
 
 
+# forge-eval records each validation it ran on a bundle as a namespaced
+# "<check>:<state>" ref (e.g. "forge_contract_core.family_payload:passed").
+# This metric measures coverage over two validation dimensions; each maps onto
+# the real check forge-eval emits for it. A dimension only counts as covered
+# when its check is present AND passed. Source of these strings:
+# forge-eval/repo/src/forge_eval/centipede_runner.py.
+_VALIDATION_REF_DIMENSIONS = {
+    "schema_validation": "forge_contract_core.family_payload",
+    "contract_core_validation": "forge_contract_core.role_matrix",
+}
+
+
 def _score_validation_refs(source_payload: dict[str, Any]) -> float:
     refs = source_payload.get("validation_refs")
     if not isinstance(refs, list):
         return 0.0
-    normalized = {str(ref).strip() for ref in refs if str(ref).strip()}
-    required_refs = {"schema_validation", "contract_core_validation"}
-    return round(len(required_refs.intersection(normalized)) / len(required_refs), 6)
+    passed_checks = {
+        ref.split(":", 1)[0].strip()
+        for ref in refs
+        if isinstance(ref, str) and ref.strip().endswith(":passed")
+    }
+    covered = sum(
+        1 for check in _VALIDATION_REF_DIMENSIONS.values() if check in passed_checks
+    )
+    return round(covered / len(_VALIDATION_REF_DIMENSIONS), 6)
 
 
 def _score_validation_state(source_payload: dict[str, Any]) -> float:
