@@ -21,6 +21,7 @@ from eval_cal_node.contracts.evaluation_spine import (
 )
 from eval_cal_node.services.evaluation_spine_calibrator import (
     CalibrationInputError,
+    _score_validation_refs,
     build_eval_calibration_report_payload,
     calibrate_forge_eval_bundle_file,
     payload_sha256,
@@ -65,7 +66,13 @@ def forge_eval_bundle_payload() -> dict:
         ],
         "deterministic": True,
         "validation_state": "passed",
-        "validation_refs": ["schema_validation", "contract_core_validation"],
+        # Real forge-eval centipede vocabulary (see centipede_runner.py); the
+        # calibrator maps these onto the schema/contract-core coverage dimensions.
+        "validation_refs": [
+            "forge_eval.local_artifact_validation:passed",
+            "forge_contract_core.role_matrix:passed",
+            "forge_contract_core.family_payload:passed",
+        ],
     }
 
 
@@ -146,3 +153,40 @@ def test_phase04_fails_closed_without_source_bundle_hash() -> None:
 
     with pytest.raises(CalibrationInputError):
         build_eval_calibration_report_payload(source)
+
+
+# --- Regression guard: validation_refs vocabulary must match forge-eval's real
+# output. The scorer previously required the literals
+# {"schema_validation", "contract_core_validation"}, which forge-eval never
+# emits, so validation_reference_coverage was pinned at 0.0 and the downstream
+# ForgeMath gate (score >= 0.85) could never be reached for any changeset.
+
+
+def test_validation_refs_score_matches_real_forge_eval_vocabulary() -> None:
+    # Exactly what forge-eval/repo/src/forge_eval/centipede_runner.py emits.
+    refs = [
+        "forge_eval.local_artifact_validation:passed",
+        "forge_contract_core.role_matrix:passed",
+        "forge_contract_core.family_payload:passed",
+    ]
+    assert _score_validation_refs({"validation_refs": refs}) == 1.0
+
+
+def test_validation_refs_score_is_partial_when_one_dimension_missing() -> None:
+    refs = ["forge_contract_core.family_payload:passed"]  # schema dim only
+    assert _score_validation_refs({"validation_refs": refs}) == 0.5
+
+
+def test_validation_refs_score_ignores_old_phantom_literals() -> None:
+    # The pre-fix assumed vocabulary must NOT be treated as coverage.
+    refs = ["schema_validation", "contract_core_validation"]
+    assert _score_validation_refs({"validation_refs": refs}) == 0.0
+
+
+def test_validation_refs_score_excludes_unpassed_checks() -> None:
+    # A check that ran but did not pass must not count toward coverage.
+    refs = [
+        "forge_contract_core.family_payload:failed",
+        "forge_contract_core.role_matrix:passed",
+    ]
+    assert _score_validation_refs({"validation_refs": refs}) == 0.5
