@@ -1,4 +1,8 @@
-# Eval Cal Node
+# bds · Eval Cal Node
+
+> **System identity — bds family (Boswell Digital Solutions business system, local-systems tier).**
+> Post-implementation calibration node for the Forge ecosystem; a standalone CLI subsystem within the Forge ecosystem backend at `ecosystem/local-systems`.
+> **Purpose:** studies drift between forge-eval verification, declared SYSTEM.md reality, and reconciliation output, then emits bounded, reviewable calibration proposals for Eval parameters — never silent parameter changes.
 
 Post-implementation calibration node for the Forge Ecosystem.
 
